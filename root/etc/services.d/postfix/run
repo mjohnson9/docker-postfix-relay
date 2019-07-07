@@ -1,3 +1,35 @@
+#!/usr/bin/bash
 #!/usr/bin/with-contenv bash
+
+if [ -n "${RELAY}" ]; then
+	postconf -e "relayhost=${RELAY}"
+
+	if [ -n "${RELAY_USER}" -a -n "${RELAY_PASS}" ]; then
+		postconf -e 'smtp_sasl_auth_enable=yes'
+		postconf -e 'smtp_sasl_security_options=noanonymous'
+		postconf -e 'smtp_sasl_password_maps=hash:/etc/postfix/sasl_passwd'
+
+		touch /etc/postfix/sasl_passwd
+		chown root:root /etc/postfix/sasl_passwd
+		chmod 0600 /etc/postfix/sasl_passwd
+		printf '%s\t%s:%s\n' "${RELAY}" "${RELAY_USER}" "${RELAY_PASS}" > /etc/postfix/sasl_passwd
+		postmap /etc/postfix/sasl_passwd
+	fi
+fi
+
+postconf -e 'smtp_tls_CAfile=/etc/ssl/cert.pem'
+postconf -e 'smtp_tls_CApath=/etc/ssl/certs'
+
+postconf -e 'smtp_tls_note_starttls_offer=yes'
+
+if [ -z "${NO_TLS}" -o "${NO_TLS}" -eq 0 ]; then
+	if [ -z "${TLS_VERIFY}" -o "${TLS_VERIFY}" -ne 0 ]; then
+		postconf -e 'smtp_tls_security_level=secure'
+	else
+		postconf -e 'smtp_tls_security_level=encrypt'
+	fi
+else
+	postconf -e 'smtp_tls_security_level=none'
+fi
 
 exec /usr/sbin/postfix start-fg
