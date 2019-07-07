@@ -3,7 +3,7 @@
 if [ -n "${RELAY}" ]; then
 	postconf -e "relayhost=${RELAY}"
 
-	if [ -n "${RELAY_USER}" -a -n "${RELAY_PASS}" ]; then
+	if [[ -n "${RELAY_USER}" ]] || [[ -n "${RELAY_PASS}" ]]; then
 		postconf -e 'smtp_sasl_auth_enable=yes'
 		postconf -e 'smtp_sasl_security_options=noanonymous'
 		postconf -e 'smtp_sasl_password_maps=hash:/etc/postfix/sasl_passwd'
@@ -21,8 +21,8 @@ postconf -e 'smtp_tls_CApath=/etc/ssl/certs'
 
 postconf -e 'smtp_tls_note_starttls_offer=yes'
 
-if [ -z "${NO_TLS}" -o "${NO_TLS}" -eq 0 ]; then
-	if [ -z "${TLS_VERIFY}" -o "${TLS_VERIFY}" -ne 0 ]; then
+if [[ -z "${NO_TLS}" ]] || [[ "${NO_TLS}" -eq 0 ]]; then
+	if [[ -z "${TLS_VERIFY}" ]] || [[ "${TLS_VERIFY}" -ne 0 ]]; then
 		postconf -e 'smtp_tls_security_level=secure'
 	else
 		postconf -e 'smtp_tls_security_level=encrypt'
